@@ -4,7 +4,6 @@
 #include <chrono>
 #include <cinttypes>
 #include <memory>
-#include <future>
 
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/set_bool.hpp>

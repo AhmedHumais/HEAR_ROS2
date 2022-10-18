@@ -1,16 +1,21 @@
 #ifndef ROSUNIT_EMPTYCLNT
 #define ROSUNIT_EMPTYCLNT
 
-#include <ros/ros.h>
-#include <std_srvs/Empty.h>
+#include <chrono>
+#include <cinttypes>
+#include <memory>
+
+#include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/empty.hpp>
 
 namespace HEAR{
 
 class ROSUnitEmptyClient {
 private:
-    ros::ServiceClient m_client;
+    rclcpp::Node::SharedPtr nh_;
+    rclcpp::Client<std_srvs::srv::Empty>::SharedPtr m_client;
 public:
-    ROSUnitEmptyClient(ros::NodeHandle&, std::string);
+    ROSUnitEmptyClient(rclcpp::Node::SharedPtr, const std::string&);
     bool process();
 };
 
