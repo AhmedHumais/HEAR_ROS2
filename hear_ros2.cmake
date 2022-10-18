@@ -1,7 +1,7 @@
 set(HEAR_ROS2_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
 set(HEAR_ROS2_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
 
-file(GLOB HEAR_ROS2_SRCs ${HEAR_ROS_SOURCE_DIR}/*.cpp)
+file(GLOB HEAR_ROS2_SRCs ${HEAR_ROS2_SOURCE_DIR}/*.cpp)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -17,6 +17,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
@@ -36,8 +39,6 @@ find_file(TF2_CPP_HEADERS
   PATH_SUFFIXES tf2_geometry_msgs
 )
 
-set(HEAR_ROS2_DEFs "")
-
 if(EXISTS ${TF2_CPP_HEADERS})
   set(HEAR_ROS2_DEFs -DTF2_CPP_HEADERS)
 endif()
@@ -48,5 +49,8 @@ set(HEAR_ROS2_AMENT_DEPS
     tf2
     tf2_ros
     tf2_geometry_msgs
+    std_msgs
+    std_srvs
+    nav_msgs
 )
 

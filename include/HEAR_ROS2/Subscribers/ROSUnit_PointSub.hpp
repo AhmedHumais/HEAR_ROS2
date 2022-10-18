@@ -9,7 +9,7 @@ namespace HEAR{
 class ROSUnitPointSub : public ROSUnit_Sub{
 private:
     rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr sub_;
-    void callback(const geometry_msgs::msg::Point& msg);
+    void callback(const geometry_msgs::msg::Point::SharedPtr msg);
 public:
     ROSUnitPointSub (rclcpp::Node::SharedPtr nh, const std::string& topic, int idx);
     TYPE getType(){return TYPE::Float3;}
@@ -21,8 +21,8 @@ ROSUnitPointSub::ROSUnitPointSub (rclcpp::Node::SharedPtr nh, const std::string&
     id_ = idx;
 }
 
-void ROSUnitPointSub::callback(const geometry_msgs::msg::Point& msg){
-    Vector3D<float> data(msg.x, msg.y, msg.z);
+void ROSUnitPointSub::callback(const geometry_msgs::msg::Point::SharedPtr msg){
+    Vector3D<float> data(msg->x, msg->y, msg->z);
     ((OutputPort<Vector3D<float>>*)_output_port)->write(data);
 }
 

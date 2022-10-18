@@ -11,7 +11,7 @@ namespace HEAR{
 class ROSUnitQuatSub : public ROSUnit_Sub{
 private:
     rclcpp::Subscription<geometry_msgs::msg::Quaternion>::SharedPtr sub_;
-    void callback(const geometry_msgs::msg::Quaternion& msg);
+    void callback(const geometry_msgs::msg::Quaternion::SharedPtr msg);
 public:
     ROSUnitQuatSub (rclcpp::Node::SharedPtr nh, const std::string& topic, int idx);
     TYPE getType(){return TYPE::Float3;}
@@ -23,8 +23,8 @@ ROSUnitQuatSub::ROSUnitQuatSub (rclcpp::Node::SharedPtr nh, const std::string& t
     id_ = idx;
 }
 
-void ROSUnitQuatSub::callback(const geometry_msgs::msg::Quaternion& msg){
-    tf2::Quaternion data(msg.x, msg.y, msg.z, msg.w);
+void ROSUnitQuatSub::callback(const geometry_msgs::msg::Quaternion::SharedPtr msg){
+    tf2::Quaternion data(msg->x, msg->y, msg->z, msg->w);
     ((OutputPort<tf2::Quaternion>*)_output_port)->write(data);
 }
 

@@ -7,7 +7,7 @@ ROSUnit_BoolServer::ROSUnit_BoolServer(rclcpp::Node::SharedPtr nh) : nh_(nh){
 }
 
 UpdateTrigger* ROSUnit_BoolServer::registerServer(const std::string &service_topic){
-    m_server = nh_->create_service<std_srvs::srv::SetBool>(service_topic, std::bind(&ROSUnit_BoolServer::srv_callback, this, _2));  
+    m_server = nh_->create_service<std_srvs::srv::SetBool>(service_topic, std::bind(&ROSUnit_BoolServer::srv_callback, this, _1, _2));  
     return ext_trig;
 }
 

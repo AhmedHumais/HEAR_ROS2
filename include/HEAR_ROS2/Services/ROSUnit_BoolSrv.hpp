@@ -7,6 +7,7 @@
 
 #include "HEAR_core/ExternalTrigger.hpp"
 
+using std::placeholders::_1;
 using std::placeholders::_2;
 
 namespace HEAR{

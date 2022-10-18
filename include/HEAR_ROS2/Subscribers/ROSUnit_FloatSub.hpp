@@ -9,7 +9,7 @@ namespace HEAR{
 class ROSUnitFloatSub : public ROSUnit_Sub{
 private:
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_;
-    void callback(const std_msgs::msg::Float32&) const;
+    void callback(const std_msgs::msg::Float32::SharedPtr);
 public:
     ROSUnitFloatSub(rclcpp::Node::SharedPtr nh, std::string topic, int idx);
     TYPE getType(){ return TYPE::Float;}
@@ -22,8 +22,8 @@ ROSUnitFloatSub::ROSUnitFloatSub(rclcpp::Node::SharedPtr nh, std::string topic, 
     ((OutputPort<float>*)_output_port)->write(0);
     id_ = idx;
 }
-void ROSUnitFloatSub::callback(const std_msgs::msg::Float32& msg) const{
-    ((OutputPort<float>*)_output_port)->write(msg.data);
+void ROSUnitFloatSub::callback(const std_msgs::msg::Float32::SharedPtr msg){
+    ((OutputPort<float>*)_output_port)->write(msg->data);
 }
 
 }

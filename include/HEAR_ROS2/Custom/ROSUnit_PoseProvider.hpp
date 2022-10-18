@@ -23,7 +23,7 @@ class ROSUnit_PoseProvider{
 private:
     rclcpp::Node::SharedPtr nh_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr opti_sub; 
-    rclcpp::Subscription<geometry_msgs::msg::Quaternion>::SharedPtr xsens_ori_sub;
+    rclcpp::Subscription<geometry_msgs::msg::QuaternionStamped>::SharedPtr xsens_ori_sub;
     rclcpp::Subscription<geometry_msgs::msg::Vector3Stamped>::SharedPtr xsens_ang_vel_sub, xsens_free_acc_sub;
     // ros::ServiceServer m_server;
     
@@ -33,10 +33,10 @@ private:
     ExternalOutputPort<Vector3D<float>>* imu_ori_port;
     ExternalOutputPort<Vector3D<float>>* imu_acc_port;
     ExternalOutputPort<Vector3D<float>>* imu_angular_rt_port;
-    void callback_opti_pose(const geometry_msgs::msg::PoseStamped& );
-    void callback_ori(const geometry_msgs::msg::QuaternionStamped& );
-    void callback_free_acc(const geometry_msgs::msg::Vector3Stamped& );
-    void callback_angular_vel(const geometry_msgs::msg::Vector3Stamped&);
+    void callback_opti_pose(const geometry_msgs::msg::PoseStamped::SharedPtr );
+    void callback_ori(const geometry_msgs::msg::QuaternionStamped::SharedPtr );
+    void callback_free_acc(const geometry_msgs::msg::Vector3Stamped::SharedPtr );
+    void callback_angular_vel(const geometry_msgs::msg::Vector3Stamped::SharedPtr );
     // bool srv_callback(hear_msgs::set_float::Request&, hear_msgs::set_float::Response&);
     tf2::Matrix3x3 rot_offset;
     tf2::Vector3 trans_offset;

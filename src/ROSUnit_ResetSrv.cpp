@@ -8,7 +8,7 @@ ROSUnit_ResetServer::ROSUnit_ResetServer(rclcpp::Node::SharedPtr nh) : nh_(nh) {
 }
 
 ResetTrigger* ROSUnit_ResetServer::registerServer(const std::string &service_topic){
-    m_server = nh_->create_service<std_srvs::srv::Empty>(service_topic, std::bind(&ROSUnit_ResetServer::srv_callback, this, _2));  
+    m_server = nh_->create_service<std_srvs::srv::Empty>(service_topic, std::bind(&ROSUnit_ResetServer::srv_callback, this, _1, _2));  
 
     return ext_trig;
 }

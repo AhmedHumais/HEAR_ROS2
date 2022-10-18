@@ -15,6 +15,9 @@
 #include "std_srvs/srv/set_bool.hpp"
 #include "tf2/LinearMath/Transform.h"
 
+using std::placeholders::_1;
+using std::placeholders::_2;
+
 namespace HEAR{
 
 class ROSUnit_SLAM {
@@ -39,7 +42,7 @@ private:
     tf2::Matrix3x3 slam_rot;    
     bool to_map = false;
 
-    void odom_callback(const nav_msgs::msg::Odometry& odom_msg);
+    void odom_callback(const nav_msgs::msg::Odometry::SharedPtr odom_msg);
     void srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
           std::shared_ptr<std_srvs::srv::SetBool::Response> response);
 

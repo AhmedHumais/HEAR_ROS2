@@ -19,7 +19,7 @@ std::vector<ExternalOutputPort<Vector3D<float>>*> ROSUnit_SLAM::registerSLAM(con
     tf_listener_ =
       std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
     
-    set_offset_srv = nh_->create_service<std_srvs::srv::SetBool>("/set_map_frame_offset", std::bind(&ROSUnit_SLAM::srv_callback, this, std::placeholders::_2));
+    set_offset_srv = nh_->create_service<std_srvs::srv::SetBool>("/set_map_frame_offset", std::bind(&ROSUnit_SLAM::srv_callback, this, _1, _2));
     
     odom_sub = nh_->create_subscription<nav_msgs::msg::Odometry>(t_name, 10, std::bind(&ROSUnit_SLAM::odom_callback, this, std::placeholders::_1));
     
@@ -35,13 +35,13 @@ void ROSUnit_SLAM::connectInputs(OutputPort<Vector3D<float>>* pos_port, OutputPo
     ori_inp_port->connect(ori_port);
 }
 
-void ROSUnit_SLAM::odom_callback(const nav_msgs::msg::Odometry& odom_msg){
+void ROSUnit_SLAM::odom_callback(const nav_msgs::msg::Odometry::SharedPtr odom_msg){
     tf2::Vector3 pos, vel;
     tf2::Matrix3x3 rot;
 
     geometry_msgs::msg::PoseStamped slam_pose, tf_pose;
-    slam_pose.header = odom_msg.header;
-    slam_pose.pose = odom_msg.pose.pose;
+    slam_pose.header = odom_msg->header;
+    slam_pose.pose = odom_msg->pose.pose;
 
     if(to_map){
         try{

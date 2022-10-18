@@ -24,7 +24,7 @@ std::vector<ExternalOutputPort<Vector3D<float>>*> ROSUnit_PoseProvider::register
 ExternalOutputPort<Vector3D<float>>* ROSUnit_PoseProvider::registerImuOri(std::string t_name){
     imu_ori_port = new ExternalOutputPort<Vector3D<float>>(0);
     imu_ori_port->write(Vector3D<float>(0,0,0));
-    xsens_ori_sub = nh_->create_subscription<geometry_msgs::msg::Quaternion>(t_name, 10, std::bind(&ROSUnit_PoseProvider::callback_ori, this, _1));
+    xsens_ori_sub = nh_->create_subscription<geometry_msgs::msg::QuaternionStamped>(t_name, 10, std::bind(&ROSUnit_PoseProvider::callback_ori, this, _1));
     return imu_ori_port;
 }
 
@@ -47,15 +47,15 @@ ExternalOutputPort<Vector3D<float>>* ROSUnit_PoseProvider::registerImuAccelerati
 //     return true;
 // }
 
-void ROSUnit_PoseProvider::callback_opti_pose(const geometry_msgs::msg::PoseStamped& msg){
+void ROSUnit_PoseProvider::callback_opti_pose(const geometry_msgs::msg::PoseStamped::SharedPtr msg){
     
     tf2::Vector3 vel;
-    auto pos = tf2::Vector3({msg.pose.position.x, msg.pose.position.y, msg.pose.position.z});
+    auto pos = tf2::Vector3({msg->pose.position.x, msg->pose.position.y, msg->pose.position.z});
     auto calib_pos = rot_offset*pos - trans_offset;
 
     Vector3D<float> vec = {(float)calib_pos.x(), (float)calib_pos.y(), (float)calib_pos.z()};
 
-    auto R_mat = tf2::Matrix3x3(tf2::Quaternion(msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w ));
+    auto R_mat = tf2::Matrix3x3(tf2::Quaternion(msg->pose.orientation.x, msg->pose.orientation.y, msg->pose.orientation.z, msg->pose.orientation.w ));
 
     R_mat = rot_offset * R_mat * rot_offset.transpose();
     tf2Scalar yaw, pitch, roll;
@@ -66,12 +66,12 @@ void ROSUnit_PoseProvider::callback_opti_pose(const geometry_msgs::msg::PoseStam
     // velocity calculation
     if(first_read == 0){
         first_read = 1;
-        prevT = msg.header.stamp;
+        prevT = msg->header.stamp;
         prev_pos = pos;
         vel = tf2::Vector3(0, 0, 0);
         prev_diff = vel;
     }else{
-        auto _dt = ((rclcpp::Time)msg.header.stamp - prevT).seconds();
+        auto _dt = ((rclcpp::Time)msg->header.stamp - prevT).seconds();
         auto diff = (pos - prev_pos)/_dt;
         vel = diff;
         if(first_read == 1){
@@ -87,7 +87,7 @@ void ROSUnit_PoseProvider::callback_opti_pose(const geometry_msgs::msg::PoseStam
         }
         prev_diff = diff;
         prev_pos = pos;
-        prevT = msg.header.stamp;
+        prevT = msg->header.stamp;
     }
     opti_vel = rot_offset*vel;
     ////////////////////////
@@ -97,9 +97,9 @@ void ROSUnit_PoseProvider::callback_opti_pose(const geometry_msgs::msg::PoseStam
     opti_ori_port->write(vec_ori);
 }
 
-void ROSUnit_PoseProvider::callback_ori(const geometry_msgs::msg::QuaternionStamped& msg){
+void ROSUnit_PoseProvider::callback_ori(const geometry_msgs::msg::QuaternionStamped::SharedPtr msg){
     
-    auto R_mat = tf2::Matrix3x3(tf2::Quaternion(msg.quaternion.x, msg.quaternion.y, msg.quaternion.z, msg.quaternion.w));
+    auto R_mat = tf2::Matrix3x3(tf2::Quaternion(msg->quaternion.x, msg->quaternion.y, msg->quaternion.z, msg->quaternion.w));
 
     tf2Scalar yaw, roll, pitch;
     R_mat.getEulerYPR(yaw, pitch, roll);
@@ -108,14 +108,14 @@ void ROSUnit_PoseProvider::callback_ori(const geometry_msgs::msg::QuaternionStam
     imu_ori_port->write(vec);
 }
 
-void ROSUnit_PoseProvider::callback_angular_vel(const geometry_msgs::msg::Vector3Stamped&  msg){
-    Vector3D<float> vec = {(float)msg.vector.x, (float)msg.vector.y, (float)msg.vector.z};
+void ROSUnit_PoseProvider::callback_angular_vel(const geometry_msgs::msg::Vector3Stamped::SharedPtr msg){
+    Vector3D<float> vec = {(float)msg->vector.x, (float)msg->vector.y, (float)msg->vector.z};
 
     imu_angular_rt_port->write(vec);
 }
 
-void ROSUnit_PoseProvider::callback_free_acc(const geometry_msgs::msg::Vector3Stamped& msg){
-    Vector3D<float> vec = {(float)msg.vector.x, (float)msg.vector.y, (float)msg.vector.z};
+void ROSUnit_PoseProvider::callback_free_acc(const geometry_msgs::msg::Vector3Stamped::SharedPtr msg){
+    Vector3D<float> vec = {(float)msg->vector.x, (float)msg->vector.y, (float)msg->vector.z};
 
     imu_acc_port->write(vec);
 }
