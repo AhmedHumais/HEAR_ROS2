@@ -15,6 +15,8 @@
 #include "HEAR_core/Vector3D.hpp"
 #include "HEAR_core/ExternalTrigger.hpp"
 
+using std::placeholders::_1;
+
 namespace HEAR{
 
 class ROSUnit_PoseProvider{
@@ -40,13 +42,13 @@ private:
     tf2::Vector3 trans_offset;
 
     tf2::Vector3 opti_pos, prev_pos, opti_vel, prev_diff, _hold;
-    ros::Time prevT;
+    rclcpp::Time prevT;
     uint8_t first_read = 0;
     const float PEAK_THRESH = 0.35;
 
 public:
     void process(){}
-    ROSUnit_PoseProvider(ros::NodeHandle& nh);
+    ROSUnit_PoseProvider(rclcpp::Node::SharedPtr nh);
     ~ROSUnit_PoseProvider(){}
     std::vector<ExternalOutputPort<Vector3D<float>>*> registerOptiPose(std::string t_name);
     ExternalOutputPort<Vector3D<float>>* registerImuOri(std::string t_name);

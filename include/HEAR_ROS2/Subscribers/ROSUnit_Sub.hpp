@@ -11,11 +11,9 @@
 using std::placeholders::_1;
 
 namespace HEAR{
-template<class M>
 class ROSUnit_Sub {
 protected:
     int id_; 
-    rclcpp::Subscription<M>::SharedPtr sub_;
     Port* _output_port;
 public:
     template <class T> OutputPort<T>* getOutputPort() { return (OutputPort<T>*)_output_port;}
