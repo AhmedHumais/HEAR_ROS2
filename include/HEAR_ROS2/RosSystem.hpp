@@ -5,26 +5,20 @@
 #define ROSSYSTEM_HPP
 
 #include "HEAR_core/System.hpp"
-#include "HEAR_ROS/ROSUnit_Pub.hpp"
-#include "HEAR_ROS/ROSUnit_FloatArrPub.hpp"
-#include "HEAR_ROS/ROSUnit_FloatPub.hpp"
-#include "HEAR_ROS/ROSUnit_PointPub.hpp"
-#include "HEAR_ROS/ROSUnit_QuatPub.hpp"
-#include "HEAR_ROS/ROSUnit_ResetSrv.hpp"
-#include "HEAR_ROS/ROSUnit_UpdateContSrv.hpp"
-#include "HEAR_ROS/ROSUnit_UpdateMRFTsrv.hpp"
-#include "HEAR_ROS/ROSUnit_BoolSrv.hpp"
-#include "HEAR_ROS/ROSUnit_Sub.hpp"
-#include "HEAR_ROS/ROSUnit_PointSub.hpp"
-#include "HEAR_ROS/ROSUnit_FloatSub.hpp"
-#include "HEAR_ROS/ROSUnit_QuatSub.hpp"
-#include <ros/ros.h>
+
+#include "HEAR_ROS2/Services/ROSUnit_ResetSrv.hpp"
+#include "HEAR_ROS2/Services/ROSUnit_BoolSrv.hpp"
+#include "HEAR_ROS2/Services/ROSUnit_UpdateMRFTsrv.hpp"
+#include "HEAR_ROS2/Services/ROSUnit_UpdateContSrv.hpp"
+#include "HEAR_ROS2/Publishers/Publishers.hpp"
+#include "HEAR_ROS2/Subscribers/Suibscribers.hpp"
+#include <rclcpp/rclcpp.hpp>
 
 namespace HEAR{
 
 class RosSystem : public System {
 public:
-    RosSystem(ros::NodeHandle& nh, ros::NodeHandle& pnh, const int frequency, const std::string& sys_name ) : nh_(nh), pnh_(pnh), System(frequency, sys_name){}
+    RosSystem(rclcpp::Node::SharedPtr nh, const int frequency, const std::string& sys_name ) : nh_(nh), System(frequency, sys_name){}
     ~RosSystem(); 
     ROSUnit_Sub* createSub(TYPE d_type, std::string topic_name);
     ROSUnit_Sub* createSub(std::string topic_name, InputPort<float>* dest_port);
@@ -40,22 +34,22 @@ public:
     ExternalTrigger* createUpdateTrigger(UPDATE_MSG_TYPE type, std::string topic, Block* dest_block);
     void start();
 private:
-    ros::NodeHandle nh_;
-    ros::NodeHandle pnh_;
-    ros::Timer timer_;
+    rclcpp::Node::SharedPtr nh_;
+    rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::Time last_call_time_;
     std::vector<ROSUnit_Pub*> _ros_pubs;
     std::vector<ROSUnit_Sub*> _ros_subs;
     std::vector<std::string> ros_pub_names, ros_sub_names;
     std::vector<std::pair<int, Port*>> pub_cons, sub_cons;
     int pub_counter = 2000;
     int sub_counter = 1000;
-    void loopCb(const ros::TimerEvent& event);
+    void loopCb();
     template <class T> void connectPub(ROSUnit_Pub* pub, OutputPort<T>* port);
  
 };
 
 RosSystem::~RosSystem(){
-    timer_.stop();
+    timer_->cancel();
     for(auto const& ros_pub : _ros_pubs){
         delete ros_pub;
     }
@@ -123,13 +117,13 @@ void RosSystem::createPub(TYPE d_type, std::string topic_name, OutputPort<T>* sr
     ROSUnit_Pub* pub;
     switch(d_type){
         case TYPE::Float3 :
-            pub = new ROSUnitPointPub(pnh_, topic_name, pub_counter++);
+            pub = new ROSUnitPointPub(nh_, topic_name, pub_counter++);
             break;
         case TYPE::FloatVec :
-            pub = new ROSUnitFloatArrPub(pnh_, topic_name, pub_counter++);
+            pub = new ROSUnitFloatArrPub(nh_, topic_name, pub_counter++);
             break;
         case TYPE::QUAT :
-            pub = new ROSUnitQuatPub(pnh_, topic_name, pub_counter++);
+            pub = new ROSUnitQuatPub(nh_, topic_name, pub_counter++);
             break;
         case TYPE::Float :
             pub = new ROSUnitFloatPub(nh_, topic_name, pub_counter++);
@@ -148,7 +142,7 @@ void RosSystem::createPub(std::string topic_name, OutputPort<float>* src_port){
 }
 
 ExternalTrigger* RosSystem::createResetTrigger(std::string topic){
-    auto srv = new ROSUnit_ResetServer(pnh_);
+    auto srv = new ROSUnit_ResetServer(nh_);
     auto trig = srv->registerServer(topic);
     this->addExternalTrigger(trig, topic);
     return trig;
@@ -164,20 +158,20 @@ ExternalTrigger* RosSystem::createUpdateTrigger(UPDATE_MSG_TYPE type, std::strin
     //TODO make class for ROSUnit_Srv
     ExternalTrigger* trig;
     switch(type){
-        case UPDATE_MSG_TYPE::PID_UPDATE :{
-            auto srv = new ROSUnit_UpdateContSrv(pnh_);
-            trig = srv->registerServer(topic);
-            break;}
+        // case UPDATE_MSG_TYPE::PID_UPDATE :{
+        //     auto srv = new ROSUnit_UpdateContSrv(nh_);
+        //     trig = srv->registerServer(topic);
+        //     break;}
         case UPDATE_MSG_TYPE::BOOL_MSG :{
-            auto srv = new ROSUnit_BoolServer(pnh_);
+            auto srv = new ROSUnit_BoolServer(nh_);
             trig = srv->registerServer(topic);
             break;
         }
-        case UPDATE_MSG_TYPE::MRFT_UPDATE : {
-            auto srv = new ROSUnit_UpdateMRFTsrv(pnh_);
-            trig = srv->registerServer(topic);
-            break;
-        }
+        // case UPDATE_MSG_TYPE::MRFT_UPDATE : {
+        //     auto srv = new ROSUnit_UpdateMRFTsrv(nh_);
+        //     trig = srv->registerServer(topic);
+        //     break;
+        // }
         default:
             return NULL;
     }
@@ -193,10 +187,13 @@ ExternalTrigger* RosSystem::createUpdateTrigger(UPDATE_MSG_TYPE type, std::strin
     return trig;
 }
 
-void RosSystem::loopCb(const ros::TimerEvent& event){
+void RosSystem::loopCb(){
+    auto now_time = (nh_->get_clock())->now();
+    auto loop_time = now_time - last_call_time_;
+    last_call_time_ = now_time;
 
-    if(event.profile.last_duration > ros::WallDuration(_dt)){
-        std::cout << "[WARN] " << this->_sys_name << " taking longer" << std::endl;  
+    if(loop_time.seconds() > (_dt+0.001)){
+        std::cout << "[WARN] " << this->_sys_name << " taking longer"<< loop_time.seconds() - _dt << std::endl;  
     }
 
     this->loop();
@@ -209,8 +206,9 @@ void RosSystem::loopCb(const ros::TimerEvent& event){
 
 void RosSystem::start(){
     this->init(true);
-    timer_ = nh_.createTimer(ros::Duration(_dt), &RosSystem::loopCb, this);
-
+    timer_ = nh_->create_wall_timer(std::chrono::duration<double>(_dt), std::bind(&RosSystem::loopCb, this));
+    
+    last_call_time_ = (nh_->get_clock())->now();
 }
 
 

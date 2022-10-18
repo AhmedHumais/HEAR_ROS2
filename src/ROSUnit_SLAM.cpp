@@ -1,8 +1,8 @@
-#include "HEAR_ROS/ROSUnit_SLAM.hpp"
+#include "HEAR_ROS2/Custom/ROSUnit_SLAM.hpp"
 
 namespace HEAR{
 
-ROSUnit_SLAM::ROSUnit_SLAM(ros::NodeHandle& nh, bool use_map) : nh_(nh), to_map(use_map){
+ROSUnit_SLAM::ROSUnit_SLAM(rclcpp::Node::SharedPtr nh, bool use_map) : nh_(nh), to_map(use_map){
     pos_inp_port = new InputPort<Vector3D<float>>(0, 0);
     ori_inp_port = new InputPort<Vector3D<float>>(0, 0);
 
@@ -13,14 +13,19 @@ ROSUnit_SLAM::ROSUnit_SLAM(ros::NodeHandle& nh, bool use_map) : nh_(nh), to_map(
 }
 
 std::vector<ExternalOutputPort<Vector3D<float>>*> ROSUnit_SLAM::registerSLAM(const std::string& t_name){
-    set_offset_srv = nh_.advertiseService("/set_map_frame_offset", &ROSUnit_SLAM::srv_callback, this);
     
-    odom_sub = nh_.subscribe(t_name, 10, &ROSUnit_SLAM::odom_callback, this);
+    tf_buffer_ =
+      std::make_unique<tf2_ros::Buffer>(nh_->get_clock());
+    tf_listener_ =
+      std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    
+    set_offset_srv = nh_->create_service<std_srvs::srv::SetBool>("/set_map_frame_offset", std::bind(&ROSUnit_SLAM::srv_callback, this, std::placeholders::_2));
+    
+    odom_sub = nh_->create_subscription<nav_msgs::msg::Odometry>(t_name, 10, std::bind(&ROSUnit_SLAM::odom_callback, this, std::placeholders::_1));
     
     pos_out_port = new ExternalOutputPort<Vector3D<float>>(0);
     vel_out_port = new ExternalOutputPort<Vector3D<float>>(0);
     ori_out_port = new ExternalOutputPort<Vector3D<float>>(0);
-    tf2_ros::TransformListener tf_listener(tf_Buffer);
 
     return std::vector<ExternalOutputPort<Vector3D<float>>*>{pos_out_port, ori_out_port, vel_out_port};
 }
@@ -30,20 +35,20 @@ void ROSUnit_SLAM::connectInputs(OutputPort<Vector3D<float>>* pos_port, OutputPo
     ori_inp_port->connect(ori_port);
 }
 
-void ROSUnit_SLAM::odom_callback(const nav_msgs::Odometry::ConstPtr& odom_msg){
+void ROSUnit_SLAM::odom_callback(const nav_msgs::msg::Odometry& odom_msg){
     tf2::Vector3 pos, vel;
     tf2::Matrix3x3 rot;
 
-    geometry_msgs::PoseStamped slam_pose, tf_pose;
-    slam_pose.header = odom_msg->header;
-    slam_pose.pose = odom_msg->pose.pose;
+    geometry_msgs::msg::PoseStamped slam_pose, tf_pose;
+    slam_pose.header = odom_msg.header;
+    slam_pose.pose = odom_msg.pose.pose;
 
     if(to_map){
         try{
-            tf_Buffer.transform(slam_pose, tf_pose, ref_frame, ros::Duration(0.1));
+            tf_pose = tf_buffer_->transform(slam_pose, ref_frame, tf2::durationFromSec(0.1));
         }
         catch (tf2::TransformException &ex) {
-            ROS_WARN("Failure %s\n", ex.what()); //Print exception which was caught
+            RCLCPP_ERROR(nh_->get_logger(), "Failure %s\n", ex.what()); //Print exception which was caught
         }
         pos = {tf_pose.pose.position.x, tf_pose.pose.position.y, tf_pose.pose.position.z};
         auto ori = tf2::Quaternion(tf_pose.pose.orientation.x, tf_pose.pose.orientation.y, tf_pose.pose.orientation.z, tf_pose.pose.orientation.w);
@@ -64,7 +69,7 @@ void ROSUnit_SLAM::odom_callback(const nav_msgs::Odometry::ConstPtr& odom_msg){
         vel = tf2::Vector3(0, 0, 0);
         prev_diff = vel;
     }else{
-        auto _dt = (slam_pose.header.stamp - prevT).toSec();
+        auto _dt = ( (rclcpp::Time)slam_pose.header.stamp - prevT).seconds();
         auto diff = (pos - prev_pos)/_dt;
         vel = diff;
         if(first_read == 1){
@@ -93,7 +98,10 @@ void ROSUnit_SLAM::odom_callback(const nav_msgs::Odometry::ConstPtr& odom_msg){
     ori_out_port->write(Vector3D<float>(r, p, y));
 }
 
-bool ROSUnit_SLAM::srv_callback(hear_msgs::set_bool::Request& req, hear_msgs::set_bool::Response& res){
+void ROSUnit_SLAM::srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+                                std::shared_ptr<std_srvs::srv::SetBool::Response> response){
+    
+    if(request->data){
     Vector3D<float> angs, trans;
     pos_inp_port->read(trans);
     ori_inp_port->read(angs);
@@ -102,8 +110,9 @@ bool ROSUnit_SLAM::srv_callback(hear_msgs::set_bool::Request& req, hear_msgs::se
     rot.setEulerYPR(angs.z, angs.y, angs.x);
     offset_tf.setBasis(rot*(slam_rot.transpose()));
     offset_tf.setOrigin(tf2::Vector3(trans.x, trans.y, trans.z) - offset_tf.getBasis()*slam_pos);
+    }
 
-    return true;
+    response->success =true;
 }
 
 }
