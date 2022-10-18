@@ -1,21 +1,22 @@
-#include "HEAR_ROS/ROSUnit_BoolSrv.hpp"
+#include "HEAR_ROS2/Services/ROSUnit_BoolSrv.hpp"
 
 namespace HEAR{
 
-ROSUnit_BoolServer::ROSUnit_BoolServer(ros::NodeHandle &nh) : nh_(nh){
+ROSUnit_BoolServer::ROSUnit_BoolServer(rclcpp::Node::SharedPtr nh) : nh_(nh){
     ext_trig = new UpdateTrigger;
 }
 
 UpdateTrigger* ROSUnit_BoolServer::registerServer(const std::string &service_topic){
-    m_server = nh_.advertiseService(service_topic, &ROSUnit_BoolServer::srv_callback, this);  
+    m_server = nh_->create_service<std_srvs::srv::SetBool>(service_topic, std::bind(&ROSUnit_BoolServer::srv_callback, this, _2));  
     return ext_trig;
 }
 
-bool ROSUnit_BoolServer::srv_callback(hear_msgs::set_bool::Request& req, hear_msgs::set_bool::Response& res){
+void ROSUnit_BoolServer::srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+          std::shared_ptr<std_srvs::srv::SetBool::Response> response){
     BoolMsg msg;
-    msg.data = req.data;
+    msg.data = request->data;
     ext_trig->UpdateCallback((UpdateMsg*)&msg);
-    return true;
+    response->success = true;
 }
 
 }

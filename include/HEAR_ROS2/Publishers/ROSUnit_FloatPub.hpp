@@ -3,14 +3,16 @@
 #define ROSUNITFLOATPUB_HPP
 
 
-#include "HEAR_ROS2/ROSUnit_Pub.hpp"
+#include "HEAR_ROS2/Publishers/ROSUnit_Pub.hpp"
 #include "std_msgs/msg/float32.hpp"
 
 namespace HEAR{
 
-class ROSUnitFloatPub : public ROSUnit_Pub<std_msgs::msg::Float32>{
+class ROSUnitFloatPub : public ROSUnit_Pub{
+private:
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr pub_;
 public:
-    ROSUnitFloatPub(rclcpp::Node *nh, const std::string& topic_name, int idx) {
+    ROSUnitFloatPub(rclcpp::Node::SharedPtr nh, const std::string& topic_name, int idx) {
         pub_ = nh->create_publisher<std_msgs::msg::Float32>(topic_name, 10);
         _input_port = new InputPort<float>(idx, 0);
         id_ = idx; 

@@ -1,21 +1,24 @@
 #ifndef ROSUNIT_BOOLSRV_HPP
 #define ROSUNIT_BOOLSRV_HPP
 
-#include <ros/ros.h>
-#include <hear_msgs/set_bool.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/set_bool.hpp>
 #include <string>
 
 #include "HEAR_core/ExternalTrigger.hpp"
 
+using std::placeholders::_2;
+
 namespace HEAR{
 class ROSUnit_BoolServer {
 private:
-    ros::NodeHandle nh_;
-    ros::ServiceServer m_server;
+    rclcpp::Node::SharedPtr nh_;
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr m_server;
     UpdateTrigger* ext_trig;
-    bool srv_callback(hear_msgs::set_bool::Request&, hear_msgs::set_bool::Response&);
+    void srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+          std::shared_ptr<std_srvs::srv::SetBool::Response> response);
 public:
-    ROSUnit_BoolServer(ros::NodeHandle&);
+    ROSUnit_BoolServer(rclcpp::Node::SharedPtr);
     UpdateTrigger* registerServer(const std::string&);
     
 };
