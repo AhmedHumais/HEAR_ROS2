@@ -81,6 +81,12 @@ ROSUnit_Sub* RosSystem::createSub(TYPE d_type, std::string topic_name){
         case TYPE::Float :
             sub = new ROSUnitFloatSub(nh_, topic_name, sub_counter++);
             break;
+        case TYPE::Int : 
+            sub = new ROSUnitIntSub(nh_, topic_name, sub_counter++);
+            break;
+        case TYPE::FloatVec :
+            sub = new ROSUnitFloatArrSub(nh_, topic_name, sub_counter++);
+            break;
         default:
             std::cout <<"invalid subscriber type" <<std::endl;
             assert(false);
@@ -127,6 +133,9 @@ void RosSystem::createPub(TYPE d_type, std::string topic_name, OutputPort<T>* sr
             break;
         case TYPE::Float :
             pub = new ROSUnitFloatPub(nh_, topic_name, pub_counter++);
+            break;
+        case TYPE::IntVec :
+            pub = new ROSUnitIntArrPub(nh_, topic_name, pub_counter++);
             break;
         default:
             std::cout <<"invalid publisher type" <<std::endl;
