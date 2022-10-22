@@ -134,6 +134,9 @@ void RosSystem::createPub(TYPE d_type, std::string topic_name, OutputPort<T>* sr
         case TYPE::Float :
             pub = new ROSUnitFloatPub(nh_, topic_name, pub_counter++);
             break;
+        case TYPE::Int :
+            pub = new ROSUnitIntPub(nh_, topic_name, pub_counter++);
+            break;
         case TYPE::IntVec :
             pub = new ROSUnitIntArrPub(nh_, topic_name, pub_counter++);
             break;
