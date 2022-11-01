@@ -17,7 +17,7 @@ bool ROSUnitEmptyClient::process(){
     auto res_future = m_client->async_send_request(request); 
     for(uint8_t i=0; i<100; i++){
         if (rclcpp::spin_until_future_complete(nh_,res_future, std::chrono::milliseconds(10)) == 
-                            rclcpp::executor::FutureReturnCode::SUCCESS ){
+                            rclcpp::FutureReturnCode::SUCCESS ){
             return true;
         }
     }
